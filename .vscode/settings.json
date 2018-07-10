@@ -1,0 +1,18 @@
+{
+    "editor.detectIndentation": false,
+    "editor.insertSpaces": true,
+    "files.associations":
+    {
+        "xlocale": "cpp",
+        "*.rh": "cpp",
+        "xiosbase": "cpp"
+    },
+    "editor.tokenColorCustomizations":
+    {
+        //"editor.background": "#FF0000"
+    },
+    "workbench.colorCustomizations":
+    {
+        //"tab.activeBackground":"#ff0000"
+    }
+}
