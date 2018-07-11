@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <stdint.h>
 
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
+
 #define local_persist static
 #define global_variable static
 #define internal static
@@ -20,17 +23,19 @@ const int WINDOW_HEIGHT = 200;
 
 struct win_offscreen_buffer
 {
+    //NOTE(Josh): Pixels are always 32-bits wide. (BB GG RR xx)
     BITMAPINFO Info;
     void *Memory;
     int Width;
     int Height;
-    int BytesPerPixel;
 };
+
 struct win_window_dimensions
 {
     int Width;
     int Height;
 };
+
 //TODO(Josh): Move out of global, maybe.
 global_variable bool isRunning = 1;
 global_variable struct win_offscreen_buffer OffscreenBuffer;
@@ -49,8 +54,9 @@ internal void RenderSoftware (win_offscreen_buffer *BufferBitmap, int OffsetX, i
 {
     int Width = BufferBitmap->Width;
     int Height = BufferBitmap->Height;
-    
-    int Pitch = Width*BufferBitmap->BytesPerPixel;
+    int BytesPerPixel = 4;
+
+    int Pitch = Width*BytesPerPixel;
     uint8 *Row = (uint8 *)BufferBitmap->Memory;
     for(int Y = 0; Y < Height; ++Y)
     {
@@ -77,7 +83,7 @@ internal void WIN_ResizeDIBSection(win_offscreen_buffer *Buffer, int Width, int 
 
     Buffer->Width = Width;
     Buffer->Height = Height;
-    Buffer->BytesPerPixel = 4;
+    int BytesPerPixel = 4;
 
     Buffer->Info.bmiHeader.biSize = sizeof(Buffer->Info.bmiHeader);
     Buffer->Info.bmiHeader.biWidth = Width;
@@ -86,7 +92,7 @@ internal void WIN_ResizeDIBSection(win_offscreen_buffer *Buffer, int Width, int 
     Buffer->Info.bmiHeader.biBitCount = 32;
     Buffer->Info.bmiHeader.biCompression = BI_RGB;
 
-    int BitmapMemorySize = Buffer->BytesPerPixel*(Width*Height);
+    int BitmapMemorySize = BytesPerPixel*(Width*Height);
     Buffer->Memory = VirtualAlloc(NULL, BitmapMemorySize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 //    RenderSoftware(0, 0);
 }
@@ -148,7 +154,6 @@ LRESULT CALLBACK WIN_MainWindowCallBack(HWND Window, UINT Message, WPARAM WParam
             win_window_dimensions WinDem = WIN_GetWindowDimensions(Window);
             WIN_DisplayBufferToWindow(DeviceContext, &OffscreenBuffer, WinDem.Width, WinDem.Height);
 //            PatBlt(DeviceContext, X, Y, Width, Height, WHITENESS);
-
             EndPaint(Window, &Paint);
 
         } break;
@@ -201,6 +206,33 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
                                            0, 0,
                                            Instance,
                                            0);
+
+        LPDIRECTINPUT8A DInputInterface = 0;
+        HRESULT DInputResult;
+        DInputResult = DirectInput8Create(Instance, DIRECTINPUT_VERSION, IID_IDirectInput8A, ( VOID** )DInputInterface, 0);
+       
+        if( &DInputResult > 0)
+        {
+            OutputDebugStringA("DInput successful?\n");
+        }
+        else
+        {
+            OutputDebugStringA("DInput failed?\n");
+        }
+        
+        //IDirectInput8A dinput;
+        class DInputThing : public IDirectInput8A {
+            void ConfigureDevices() = 0;
+            void CreateDevice() = 0;
+            void EnumDevices() = 0;
+            void EnumDevicesBySemantics() = 0;
+            void FindDevice() = 0;
+            void GetDeviceStatus() = 0;
+            void Initialize() = 0;
+            void RunControlPanel() = 0;
+        }
+
+        di::Initialize(Instance, DIRECTINPUT_VERSION);
 
         if(Window != NULL)
         {
